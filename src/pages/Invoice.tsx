@@ -1,4 +1,3 @@
-
 import { useLocation, Navigate } from "react-router-dom";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -14,6 +13,8 @@ import {
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 
 interface EMIData {
   principalAmount: number;
@@ -33,8 +34,28 @@ const Invoice = () => {
   }
 
   const generatePDF = () => {
-    // In a real application, this would generate a PDF
-    alert("PDF generation would be implemented here");
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.text("EMI Payment Schedule", pageWidth / 2, 20, { align: "center" });
+    
+    // Add customer details
+    doc.setFontSize(12);
+    doc.text(`Customer Name: ${name}`, 20, 40);
+    doc.text(`Start Date: ${format(date!, "PPP")}`, 20, 50);
+    
+    // Add EMI details
+    doc.text("EMI Details:", 20, 70);
+    doc.text(`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`, 30, 80);
+    doc.text(`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`, 30, 90);
+    doc.text(`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`, 30, 100);
+    doc.text(`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`, 30, 110);
+    
+    // Save the PDF
+    doc.save("emi-schedule.pdf");
+    toast.success("Invoice downloaded successfully!");
   };
 
   return (

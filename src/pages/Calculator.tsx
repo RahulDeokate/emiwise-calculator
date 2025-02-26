@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface EMIData {
   principalAmount: number;
@@ -61,94 +61,101 @@ const Calculator = () => {
   const chartData = emiData
     ? [
         {
-          name: "Principal",
-          amount: emiData.principalAmount,
+          name: "Principal Amount",
+          value: emiData.principalAmount,
         },
         {
-          name: "Interest",
-          amount: emiData.totalInterest,
+          name: "Total Interest",
+          value: emiData.totalInterest,
         },
       ]
     : [];
 
+  const COLORS = ["#4ade80", "#ff8787"];
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">EMI Calculator</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">EMI Calculator</h1>
         <p className="text-muted-foreground">
           Calculate your Equated Monthly Installment (EMI) with ease
         </p>
       </div>
 
       <Card className="p-6 space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Principal Amount (₹)</Label>
-            <div className="flex gap-4">
-              <Input
-                type="number"
-                value={principalAmount}
-                onChange={(e) => setPrincipalAmount(Number(e.target.value))}
-                className="w-full"
-              />
-              <Slider
-                value={[principalAmount]}
-                onValueChange={(value) => setPrincipalAmount(value[0])}
-                min={10000}
-                max={10000000}
-                step={10000}
-                className="w-full"
-              />
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Principal Amount (₹)</Label>
+              <div className="flex gap-4">
+                <Input
+                  type="number"
+                  value={principalAmount}
+                  onChange={(e) => setPrincipalAmount(Number(e.target.value))}
+                  className="w-full"
+                />
+                <Slider
+                  value={[principalAmount]}
+                  onValueChange={(value) => setPrincipalAmount(value[0])}
+                  min={10000}
+                  max={10000000}
+                  step={10000}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Interest Rate (% per annum)</Label>
+              <div className="flex gap-4">
+                <Input
+                  type="number"
+                  value={interestRate}
+                  onChange={(e) => setInterestRate(Number(e.target.value))}
+                  className="w-full"
+                />
+                <Slider
+                  value={[interestRate]}
+                  onValueChange={(value) => setInterestRate(value[0])}
+                  min={1}
+                  max={30}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Loan Tenure (months)</Label>
+              <div className="flex gap-4">
+                <Input
+                  type="number"
+                  value={loanTenure}
+                  onChange={(e) => setLoanTenure(Number(e.target.value))}
+                  className="w-full"
+                />
+                <Slider
+                  value={[loanTenure]}
+                  onValueChange={(value) => setLoanTenure(value[0])}
+                  min={3}
+                  max={360}
+                  step={1}
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Interest Rate (% per annum)</Label>
-            <div className="flex gap-4">
-              <Input
-                type="number"
-                value={interestRate}
-                onChange={(e) => setInterestRate(Number(e.target.value))}
-                className="w-full"
-              />
-              <Slider
-                value={[interestRate]}
-                onValueChange={(value) => setInterestRate(value[0])}
-                min={1}
-                max={30}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Loan Tenure (months)</Label>
-            <div className="flex gap-4">
-              <Input
-                type="number"
-                value={loanTenure}
-                onChange={(e) => setLoanTenure(Number(e.target.value))}
-                className="w-full"
-              />
-              <Slider
-                value={[loanTenure]}
-                onValueChange={(value) => setLoanTenure(value[0])}
-                min={3}
-                max={360}
-                step={1}
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <Button onClick={calculateEMI} className="w-full">
+          <Button 
+            onClick={calculateEMI} 
+            className="w-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+          >
             Calculate EMI
           </Button>
         </div>
 
         {emiData && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -184,18 +191,46 @@ const Calculator = () => {
               </TableBody>
             </Table>
 
-            <div className="h-64">
+            <div className="h-[300px] flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
                   <Tooltip />
-                  <Bar dataKey="amount" fill="hsl(var(--primary))" />
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
             </div>
 
-            <Button onClick={handleGenerateInvoice} className="w-full">
+            <div className="flex justify-center gap-4">
+              {chartData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center gap-2">
+                  <div
+                    className="w-4 h-4 rounded"
+                    style={{ backgroundColor: COLORS[index] }}
+                  />
+                  <span className="text-sm">{entry.name}</span>
+                </div>
+              ))}
+            </div>
+
+            <Button 
+              onClick={handleGenerateInvoice} 
+              className="w-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            >
               Generate Invoice
             </Button>
           </div>
