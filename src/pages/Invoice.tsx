@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
+import 'jspdf-autotable';
 import { toast } from "sonner";
 
 interface EMIData {
@@ -72,7 +73,6 @@ const Invoice = () => {
   const generatePDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
     const margin = 20;
     let yPos = margin;
     
@@ -82,29 +82,43 @@ const Invoice = () => {
       yPos += 30;
     }
 
-    // Add title
-    doc.setFontSize(20);
+    // Add title with styling
+    doc.setFontSize(24);
+    doc.setTextColor(49, 71, 58);
     doc.text("EMI Payment Schedule", pageWidth / 2, yPos, { align: "center" });
     yPos += 20;
     
-    // Add customer details
+    // Add customer details with styling
     doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
     doc.text(`Customer Name: ${name}`, margin, yPos);
     yPos += 10;
     doc.text(`Start Date: ${format(date!, "PPP")}`, margin, yPos);
     yPos += 20;
     
-    // Add EMI summary
-    doc.text("EMI Summary:", margin, yPos);
+    // Add EMI summary with styling
+    doc.setFontSize(14);
+    doc.setTextColor(49, 71, 58);
+    doc.text("EMI Summary", margin, yPos);
     yPos += 10;
-    doc.text(`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`, margin + 10, yPos);
-    yPos += 10;
-    doc.text(`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`, margin + 10, yPos);
-    yPos += 10;
-    doc.text(`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`, margin + 10, yPos);
-    yPos += 10;
-    doc.text(`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`, margin + 10, yPos);
-    yPos += 20;
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    const summaryData = [
+      [`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`],
+      [`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`],
+      [`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`],
+      [`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`]
+    ];
+
+    (doc as any).autoTable({
+      startY: yPos,
+      body: summaryData,
+      theme: 'plain',
+      styles: { fontSize: 12, cellPadding: 2 },
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 20;
 
     // Add monthly schedule table
     const schedule = generateMonthlySchedule();
@@ -117,13 +131,13 @@ const Invoice = () => {
       `₹${item.balance.toFixed(2)}`
     ]);
 
-    doc.autoTable({
+    (doc as any).autoTable({
       head: [headers],
       body: data,
       startY: yPos,
-      margin: { top: 20 },
       styles: { fontSize: 10 },
-      headStyles: { fillColor: [49, 71, 58] }
+      headStyles: { fillColor: [49, 71, 58], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [237, 244, 242] }
     });
     
     // Save the PDF
