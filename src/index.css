@@ -1,3 +1,6 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,12 +71,20 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border font-sans;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
+
+  html {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+.popover-content-width {
+  width: auto !important;
 }
 
 @keyframes fadeIn {
