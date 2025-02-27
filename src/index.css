@@ -39,23 +39,23 @@
   }
 
   .dark {
-    --background: 157 19% 23%;
+    --background: 157 19% 13%;
     --foreground: 180 30% 96%;
 
-    --card: 157 19% 23%;
+    --card: 157 19% 15%;
     --card-foreground: 180 30% 96%;
 
-    --popover: 157 19% 23%;
+    --popover: 157 19% 15%;
     --popover-foreground: 180 30% 96%;
 
     --primary: 180 30% 96%;
-    --primary-foreground: 157 19% 23%;
+    --primary-foreground: 157 19% 13%;
 
     --secondary: 157 19% 33%;
     --secondary-foreground: 180 30% 96%;
 
     --muted: 157 19% 33%;
-    --muted-foreground: 157 19% 80%;
+    --muted-foreground: 180 30% 80%;
 
     --accent: 157 19% 33%;
     --accent-foreground: 180 30% 96%;
@@ -100,4 +100,75 @@
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Calendar Styles */
+.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-background-color: hsl(var(--background));
+  margin: 0;
+}
+
+.rdp-months {
+  justify-content: center;
+}
+
+.rdp-month {
+  background-color: hsl(var(--background));
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.rdp-caption {
+  padding-bottom: 1rem;
+}
+
+.rdp-cell {
+  padding: 0;
+}
+
+.rdp-head_cell {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  padding-bottom: 0.5rem;
+}
+
+.rdp-button {
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+}
+
+.rdp-button:hover:not([disabled]) {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.rdp-button[disabled] {
+  opacity: 0.5;
+}
+
+.rdp-button.rdp-day_selected {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Slider improvements */
+.slider {
+  @apply relative flex h-5 w-full touch-none select-none items-center;
+}
+
+.slider-track {
+  @apply relative h-2 w-full grow overflow-hidden rounded-full bg-secondary;
+}
+
+.slider-range {
+  @apply absolute h-full bg-primary;
+}
+
+.slider-thumb {
+  @apply block h-5 w-5 rounded-full border-2 border-primary bg-background transition-colors
+         focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
+         disabled:pointer-events-none disabled:opacity-50;
 }

@@ -1,4 +1,3 @@
-
 import { useLocation, Navigate } from "react-router-dom";
 import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
@@ -71,78 +70,81 @@ const Invoice = () => {
   };
 
   const generatePDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 20;
-    let yPos = margin;
-    
-    // Add logo if uploaded
-    if (logo) {
-      doc.addImage(logo, "JPEG", margin, yPos, 40, 20);
-      yPos += 30;
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 20;
+      let yPos = margin;
+      
+      // Add logo if uploaded
+      if (logo) {
+        doc.addImage(logo, "JPEG", margin, yPos, 40, 20);
+        yPos += 30;
+      }
+
+      // Add title with styling
+      doc.setFontSize(24);
+      doc.setTextColor(49, 71, 58);
+      doc.text("EMI Payment Schedule", pageWidth / 2, yPos, { align: "center" });
+      yPos += 20;
+      
+      // Add customer details with styling
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Customer Name: ${name}`, margin, yPos);
+      yPos += 10;
+      doc.text(`Start Date: ${format(date!, "PPP")}`, margin, yPos);
+      yPos += 20;
+      
+      // Add EMI summary with styling
+      doc.setFontSize(14);
+      doc.setTextColor(49, 71, 58);
+      doc.text("EMI Summary", margin, yPos);
+      yPos += 10;
+      
+      const summaryData = [
+        [`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`],
+        [`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`],
+        [`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`],
+        [`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`]
+      ];
+
+      (doc as any).autoTable({
+        startY: yPos,
+        body: summaryData,
+        theme: 'plain',
+        styles: { fontSize: 12, cellPadding: 2 },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 20;
+
+      // Add monthly schedule table
+      const schedule = generateMonthlySchedule();
+      const headers = ["Month", "EMI", "Principal", "Interest", "Balance"];
+      const data = schedule.map(item => [
+        item.month.toString(),
+        `₹${item.emi.toFixed(2)}`,
+        `₹${item.principal.toFixed(2)}`,
+        `₹${item.interest.toFixed(2)}`,
+        `₹${item.balance.toFixed(2)}`
+      ]);
+
+      (doc as any).autoTable({
+        head: [headers],
+        body: data,
+        startY: yPos,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [49, 71, 58], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [237, 244, 242] }
+      });
+      
+      // Save the PDF
+      doc.save("emi-schedule.pdf");
+      toast.success("EMI Plan downloaded successfully!");
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error("Failed to generate PDF. Please try again.");
     }
-
-    // Add title with styling
-    doc.setFontSize(24);
-    doc.setTextColor(49, 71, 58);
-    doc.text("EMI Payment Schedule", pageWidth / 2, yPos, { align: "center" });
-    yPos += 20;
-    
-    // Add customer details with styling
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Customer Name: ${name}`, margin, yPos);
-    yPos += 10;
-    doc.text(`Start Date: ${format(date!, "PPP")}`, margin, yPos);
-    yPos += 20;
-    
-    // Add EMI summary with styling
-    doc.setFontSize(14);
-    doc.setTextColor(49, 71, 58);
-    doc.text("EMI Summary", margin, yPos);
-    yPos += 10;
-    
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    const summaryData = [
-      [`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`],
-      [`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`],
-      [`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`],
-      [`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`]
-    ];
-
-    (doc as any).autoTable({
-      startY: yPos,
-      body: summaryData,
-      theme: 'plain',
-      styles: { fontSize: 12, cellPadding: 2 },
-    });
-
-    yPos = (doc as any).lastAutoTable.finalY + 20;
-
-    // Add monthly schedule table
-    const schedule = generateMonthlySchedule();
-    const headers = ["Month", "EMI", "Principal", "Interest", "Balance"];
-    const data = schedule.map(item => [
-      item.month.toString(),
-      `₹${item.emi.toFixed(2)}`,
-      `₹${item.principal.toFixed(2)}`,
-      `₹${item.interest.toFixed(2)}`,
-      `₹${item.balance.toFixed(2)}`
-    ]);
-
-    (doc as any).autoTable({
-      head: [headers],
-      body: data,
-      startY: yPos,
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [49, 71, 58], textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [237, 244, 242] }
-    });
-    
-    // Save the PDF
-    doc.save("emi-schedule.pdf");
-    toast.success("EMI Plan downloaded successfully!");
   };
 
   return (
