@@ -1,6 +1,6 @@
 
 import { useLocation, Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
@@ -29,40 +29,112 @@ const Invoice = () => {
   const emiData = location.state?.emiData as EMIData;
   const [name, setName] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [logo, setLogo] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!emiData) {
     return <Navigate to="/calculator" replace />;
   }
 
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogo(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const generateMonthlySchedule = () => {
+    const schedule = [];
+    let remainingPrincipal = emiData.principalAmount;
+    const months = 12; // Assuming 1 year for simplicity
+    
+    for (let i = 1; i <= months; i++) {
+      const interest = (remainingPrincipal * 10) / 1200; // Assuming 10% annual interest
+      const principal = emiData.monthlyEMI - interest;
+      remainingPrincipal -= principal;
+      
+      schedule.push({
+        month: i,
+        emi: emiData.monthlyEMI,
+        principal: principal,
+        interest: interest,
+        balance: remainingPrincipal > 0 ? remainingPrincipal : 0
+      });
+    }
+    
+    return schedule;
+  };
+
   const generatePDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 20;
+    let yPos = margin;
     
+    // Add logo if uploaded
+    if (logo) {
+      doc.addImage(logo, "JPEG", margin, yPos, 40, 20);
+      yPos += 30;
+    }
+
     // Add title
     doc.setFontSize(20);
-    doc.text("EMI Payment Schedule", pageWidth / 2, 20, { align: "center" });
+    doc.text("EMI Payment Schedule", pageWidth / 2, yPos, { align: "center" });
+    yPos += 20;
     
     // Add customer details
     doc.setFontSize(12);
-    doc.text(`Customer Name: ${name}`, 20, 40);
-    doc.text(`Start Date: ${format(date!, "PPP")}`, 20, 50);
+    doc.text(`Customer Name: ${name}`, margin, yPos);
+    yPos += 10;
+    doc.text(`Start Date: ${format(date!, "PPP")}`, margin, yPos);
+    yPos += 20;
     
-    // Add EMI details
-    doc.text("EMI Details:", 20, 70);
-    doc.text(`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`, 30, 80);
-    doc.text(`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`, 30, 90);
-    doc.text(`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`, 30, 100);
-    doc.text(`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`, 30, 110);
+    // Add EMI summary
+    doc.text("EMI Summary:", margin, yPos);
+    yPos += 10;
+    doc.text(`Principal Amount: ₹${emiData.principalAmount.toFixed(2)}`, margin + 10, yPos);
+    yPos += 10;
+    doc.text(`Monthly EMI: ₹${emiData.monthlyEMI.toFixed(2)}`, margin + 10, yPos);
+    yPos += 10;
+    doc.text(`Total Amount: ₹${emiData.totalAmount.toFixed(2)}`, margin + 10, yPos);
+    yPos += 10;
+    doc.text(`Total Interest: ₹${emiData.totalInterest.toFixed(2)}`, margin + 10, yPos);
+    yPos += 20;
+
+    // Add monthly schedule table
+    const schedule = generateMonthlySchedule();
+    const headers = ["Month", "EMI", "Principal", "Interest", "Balance"];
+    const data = schedule.map(item => [
+      item.month.toString(),
+      `₹${item.emi.toFixed(2)}`,
+      `₹${item.principal.toFixed(2)}`,
+      `₹${item.interest.toFixed(2)}`,
+      `₹${item.balance.toFixed(2)}`
+    ]);
+
+    doc.autoTable({
+      head: [headers],
+      body: data,
+      startY: yPos,
+      margin: { top: 20 },
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [49, 71, 58] }
+    });
     
     // Save the PDF
     doc.save("emi-schedule.pdf");
-    toast.success("Invoice downloaded successfully!");
+    toast.success("EMI Plan downloaded successfully!");
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">EMI Invoice</h1>
+        <h1 className="text-3xl font-bold">EMI Plan</h1>
         <p className="text-muted-foreground">
           Generate and download your EMI payment schedule
         </p>
@@ -78,6 +150,46 @@ const Invoice = () => {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your full name"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Company Logo (Optional)</Label>
+            <div className="flex gap-4">
+              <Input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleLogoUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="mr-2" />
+                Upload Logo
+              </Button>
+              {logo && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setLogo(null)}
+                >
+                  Remove Logo
+                </Button>
+              )}
+            </div>
+            {logo && (
+              <div className="mt-2">
+                <img
+                  src={logo}
+                  alt="Uploaded logo"
+                  className="max-h-20 object-contain"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -133,7 +245,7 @@ const Invoice = () => {
             className="w-full"
             disabled={!name || !date}
           >
-            Download Invoice
+            Download EMI Plan
           </Button>
         </div>
       </Card>
